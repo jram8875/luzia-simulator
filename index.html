@@ -556,20 +556,24 @@
     
     // Pre-process CSV to TSV if needed
     const processedText = csvText.split('\n').map(line => {
-      // Find first two commas only
+      // Find first three commas only
       let firstCommaIndex = line.indexOf(',');
       if (firstCommaIndex === -1) return line; // Already TSV or invalid
       
       let secondCommaIndex = line.indexOf(',', firstCommaIndex + 1);
       if (secondCommaIndex === -1) return line; // Not enough columns
       
-      // Split the line into three parts
-      let timestamp = line.substring(0, firstCommaIndex);
-      let role = line.substring(firstCommaIndex + 1, secondCommaIndex);
-      let message = line.substring(secondCommaIndex + 1);
+      let thirdCommaIndex = line.indexOf(',', secondCommaIndex + 1);
+      if (thirdCommaIndex === -1) return line; // Not enough columns
+      
+      // Split the line into four parts
+      let conversationId = line.substring(0, firstCommaIndex);
+      let timestamp = line.substring(firstCommaIndex + 1, secondCommaIndex);
+      let role = line.substring(secondCommaIndex + 1, thirdCommaIndex);
+      let message = line.substring(thirdCommaIndex + 1);
       
       // Recombine with tabs
-      return `${timestamp}\t${role}\t${message}`;
+      return `${conversationId}\t${timestamp}\t${role}\t${message}`;
     }).join('\n');
 
     Papa.parse(processedText, {
