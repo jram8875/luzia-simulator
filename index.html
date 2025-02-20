@@ -544,7 +544,18 @@
     Papa.parse(csvText, {
       header: true,
       skipEmptyLines: true,
+      delimiter: ",",     // Explicitly set delimiter
+      quoteChar: '"',     // Use double quotes for field enclosure
+      escapeChar: '"',    // Use double quotes for escaping
       complete: function(results) {
+        // Validate required columns
+        if (!results.meta.fields?.includes('timestamp') || 
+            !results.meta.fields?.includes('role') || 
+            !results.meta.fields?.includes('message')) {
+          alert("CSV must contain 'timestamp', 'role', and 'message' columns!");
+          return;
+        }
+        
         conversationData = results.data;
         
         // Clear existing chat
@@ -669,7 +680,18 @@
       Papa.parse(csvText, {
         header: true,
         skipEmptyLines: true,
+        delimiter: ",",     // Explicitly set delimiter
+        quoteChar: '"',     // Use double quotes for field enclosure
+        escapeChar: '"',    // Use double quotes for escaping
         complete: function(results) {
+          // Validate required columns
+          if (!results.meta.fields?.includes('timestamp') || 
+              !results.meta.fields?.includes('role') || 
+              !results.meta.fields?.includes('message')) {
+            alert("CSV must contain 'timestamp', 'role', and 'message' columns!");
+            return;
+          }
+          
           conversationData = results.data;
           // Display all messages immediately
           clearChat();
