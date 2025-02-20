@@ -1,0 +1,789 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Luzia Conversation Simulator</title>
+
+  <!-- Chat Bubble CSS (the one you provided) -->
+  <style>
+    /* --------- BEGIN of your chat-bubble.css --------- */
+    body {
+        font-family: "Plus Jakarta Sans", sans-serif;
+        background-color: rgb(246, 246, 248);
+        margin: 0; 
+        padding: 0;
+    }
+
+    /* Repeated body rule is OK, doesn't hurt. */
+    body {
+        font-family: "Plus Jakarta Sans", sans-serif;
+        background-color: rgb(246, 246, 248);
+    }
+
+    #chat-bubble {
+        position: fixed;
+        bottom: 30px;
+        right: 30px;
+        width: 60px;
+        height: 60px;
+        background-color: #FFFFFF;
+        border-radius: 50%;
+        cursor: pointer;
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        overflow: hidden;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        animation: bounce 2s infinite;
+        z-index: 10000;
+        transition: transform 0.3s ease, box-shadow 0.3s ease;
+        visibility: visible;
+    }
+
+    #chat-bubble:hover {
+        transform: scale(1.05);
+        box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
+    }
+
+    #chat-bubble img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+    }
+
+    /* Chat Window / Phone Simulator */
+    #chat-window {
+        position: relative;
+        margin: 0 auto;
+        width: 393px;  /* iPhone 16 width */
+        height: 852px; /* iPhone 16 height */
+        background: white;
+        border-radius: 55px;
+        box-shadow: 0 0 0 11px #1f1f1f, 0 0 0 13px #191919, 0 0 34px rgba(0, 0, 0, 0.1);
+        overflow: hidden;
+        display: flex;
+        flex-direction: column;
+    }
+
+    #phone-notch {
+        position: absolute;
+        top: 0;
+        left: 50%;
+        transform: translateX(-50%);
+        width: 210px;
+        height: 30px;
+        background: #1f1f1f;
+        border-bottom-left-radius: 24px;
+        border-bottom-right-radius: 24px;
+        z-index: 1;
+    }
+
+    #status-bar {
+        height: 47px; /* Taller for iPhone 16 */
+        background: white;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 0 25px;
+        font-size: 16px;
+        color: #1f1f1f;
+        position: relative;
+        z-index: 0;
+    }
+
+    .time {
+        font-weight: 600;
+    }
+
+    .status-icons {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+    }
+
+    .signal-icon svg {
+        width: 18px;
+        height: 12px;
+    }
+
+    .battery-icon {
+        width: 27px;
+        height: 13px;
+        border: 1px solid #000;
+        border-radius: 3px;
+        padding: 1px;
+        position: relative;
+        margin-left: 6px;
+    }
+
+    .battery-icon::after {
+        content: '';
+        position: absolute;
+        right: -4px;
+        top: 4px;
+        width: 3px;
+        height: 4px;
+        background: #000;
+        border-radius: 0 2px 2px 0;
+    }
+
+    .battery-level {
+        height: 100%;
+        width: 60%;
+        background: #000;
+        border-radius: 1px;
+    }
+
+    /* Chat Header */
+    #chat-header {
+        padding: 12px 20px;
+        background: white;
+        border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        height: 44px;
+    }
+
+    #back-button {
+        color: #007AFF;
+        font-size: 24px;
+        cursor: pointer;
+    }
+
+    .header-content {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        flex: 1;
+    }
+
+    .avatar {
+        width: 36px;
+        height: 36px;
+        border-radius: 50%;
+        background: #f0f0f0;
+        overflow: hidden;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    /* This references icon.jpg */
+    .avatar img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        border-radius: 50%;
+    }
+
+    .header-text {
+        flex: 1;
+    }
+
+    .header-text h2 {
+        margin: 0;
+        font-size: 16px;
+        font-weight: 600;
+    }
+
+    .search-button {
+        color: #007AFF;
+        width: 24px;
+        height: 24px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .search-button svg {
+        width: 20px;
+        height: 20px;
+    }
+
+    /* Messages */
+    .message {
+        margin-bottom: 8px;
+        padding: 8px 12px;
+        font-size: 15px;
+        line-height: 1.4;
+        max-width: 75%;
+        position: relative;
+    }
+
+    .message.user {
+        background-color: rgb(213, 255, 189);
+        border-radius: 16px 16px 4px 16px;
+        margin-left: auto;
+        margin-right: 8px;
+    }
+
+    .message.luzia {
+        background-color: white;
+        border-radius: 16px 16px 16px 4px;
+        margin-left: 8px;
+        box-shadow: 0 1px 0.5px rgba(0, 0, 0, 0.13);
+    }
+
+    .message .timestamp {
+        font-size: 11px;
+        color: #667781;
+        margin-top: 2px;
+        line-height: 1;
+    }
+
+    .message.user .timestamp {
+        text-align: right;
+        margin-right: 8px;
+    }
+
+    .message.luzia .timestamp {
+        text-align: left;
+        margin-left: 8px;
+    }
+
+    /* Chat Body */
+    #chat-body {
+        flex: 1;
+        background-color: #fff;
+        padding: 16px;
+        overflow-y: auto;
+    }
+
+    /* Chat Input */
+    #chat-input {
+        background: white;
+        padding: 8px 8px 32px 8px;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        border-top: 1px solid rgba(0, 0, 0, 0.1);
+        margin: 0;
+    }
+
+    .input-wrapper {
+        flex: 1;
+        display: flex;
+        align-items: center;
+        background: #f1f1f1;
+        border-radius: 20px;
+        padding: 8px 12px;
+        margin: 0 4px;
+    }
+
+    #add-button {
+        color: #007AFF;
+        font-size: 24px;
+        padding: 0;
+        width: 30px;
+        height: 30px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+    }
+
+    #message-input {
+        flex: 1;
+        border: none;
+        background: transparent;
+        padding: 0;
+        font-size: 16px;
+        line-height: 1.2;
+        min-height: 20px;
+        resize: none;
+        outline: none;
+    }
+
+    #message-input::placeholder {
+        color: #8e8e93;
+    }
+
+    #send-button {
+        width: 30px;
+        height: 30px;
+        min-width: 30px;
+        border-radius: 50%;
+        background: #B773FE;
+        color: white;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        border: none;
+        padding: 0;
+        position: relative;
+    }
+
+    #send-button svg {
+        width: 16px;
+        height: 16px;
+        stroke: currentColor;
+        stroke-width: 2.5;
+        fill: none;
+    }
+
+    #bottom-area {
+        background: white;
+        padding: 0 0 8px 0;
+    }
+
+    #home-indicator {
+        width: 134px;
+        height: 5px;
+        background: #000;
+        border-radius: 100px;
+        margin: 0 auto;
+        opacity: 0.3;
+    }
+
+    @keyframes bounce {
+        0%, 20%, 50%, 80%, 100% { transform: translateY(0); }
+        40% { transform: translateY(-10px); }
+        60% { transform: translateY(-5px); }
+    }
+
+    /* Simulator Layout */
+    #container {
+      display: flex;
+      height: 100vh;
+      margin: 0;
+      padding: 0;
+    }
+
+    #left-panel {
+      width: 50%;
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+      background: #f5f5f5;
+      box-sizing: border-box;
+    }
+
+    .input-container {
+      width: 100%;
+      max-width: 500px;
+      text-align: left;
+    }
+
+    #csvInput {
+      width: 100%;
+      height: 150px;
+      margin-bottom: 16px;
+      padding: 12px;
+      border: 1px solid #ddd;
+      border-radius: 8px;
+      font-family: monospace;
+      font-size: 14px;
+    }
+
+    #controls {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 16px;
+    }
+
+    #controls button {
+      padding: 8px 16px;
+      border: none;
+      border-radius: 6px;
+      background: #007AFF;
+      color: white;
+      cursor: pointer;
+      font-size: 14px;
+    }
+
+    #controls button:hover {
+      background: #0056b3;
+    }
+
+    #right-panel {
+      width: 50%;
+      height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: white;
+    }
+  </style>
+
+</head>
+<body>
+
+<div id="container">
+    <!-- LEFT PANEL: CSV input + Buttons -->
+    <div id="left-panel">
+        <div class="input-container">
+            <h2>Conversation CSV</h2>
+            <div style="margin-bottom: 16px;">
+                <label for="iconUpload" style="display: block; margin-bottom: 8px;">Avatar Image (optional)</label>
+                <div style="display: flex; align-items: center; gap: 12px;">
+                    <img id="iconPreview" 
+                         src="icon.jpg" 
+                         alt="Avatar preview" 
+                         style="width: 48px; height: 48px; border-radius: 50%; object-fit: cover; border: 1px solid #ddd;"
+                    >
+                    <input type="file" 
+                           id="iconUpload" 
+                           accept="image/png,image/jpeg" 
+                           style="flex: 1;"
+                    >
+                    <button id="resetIcon" 
+                            style="padding: 8px 16px; border: none; border-radius: 6px; background: #007AFF; color: white; cursor: pointer;">
+                        Reset
+                    </button>
+                </div>
+            </div>
+            <textarea id="csvInput" placeholder="timestamp,role,message&#10;2024-02-06 09:30,user,Hello Luzia!&#10;2024-02-06 09:30,luzia,Hi! How can I help you?"></textarea>
+            <div id="controls" style="display: flex; align-items: center; gap: 8px;">
+                <div style="display: flex; align-items: center; border: 1px solid #ddd; padding: 4px; border-radius: 6px;">
+                    <button id="parseBtn">Parse CSV</button>
+                    <div style="width: 1px; height: 24px; background: #ddd; margin: 0 8px;"></div>
+                    <button id="replayBtn">Replay</button>
+                </div>
+                <button id="screenshotBtn">Screenshot</button>
+            </div>
+            <p><em>Paste your CSV above, then click "Parse." Then "Replay" to animate. Finally, use "Export Screenshot" or "Export GIF."</em></p>
+        </div>
+    </div>
+
+    <!-- RIGHT PANEL: Phone Display -->
+    <div id="right-panel">
+        <div id="chat-window" class="show">
+            <div id="phone-notch"></div>
+            <div id="status-bar">
+                <span class="time">21:55</span>
+                <div class="status-icons">
+                    <span class="signal-icon">
+                        <svg viewBox="0 0 18 12" fill="none" stroke="currentColor">
+                            <path d="M1 11h2V9H1v2zm4 0h2V7H5v4zm4 0h2V5H9v6zm4 0h2V3h-2v8zm4 0h2V1h-2v10z" fill="currentColor"/>
+                        </svg>
+                    </span>
+                    <div class="battery-icon">
+                        <div class="battery-level"></div>
+                    </div>
+                </div>
+            </div>
+            <div id="chat-header">
+                <span id="back-button">←</span>
+                <div class="header-content">
+                    <div class="avatar">
+                        <img 
+                            src="icon.jpg"
+                            alt="Luzia"
+                            onerror="this.onerror=null; this.src='data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 width=%2236%22 height=%2236%22><rect width=%22100%25%22 height=%22100%25%22 fill=%22%23f0f0f0%22/><text x=%2250%25%22 y=%2250%25%22 dominant-baseline=%22middle%22 text-anchor=%22middle%22 font-size=%2216%22>L</text></svg>'; console.log('Image failed to load:', this.src);"
+                        >
+                        </img>
+                    </div>
+                    <div class="header-text">
+                        <h2>Luzia</h2>
+                    </div>
+                </div>
+                <span class="search-button">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" 
+                         stroke-linecap="round" stroke-linejoin="round">
+                        <circle cx="11" cy="11" r="8"></circle>
+                        <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                    </svg>
+                </span>
+            </div>
+            <div id="chat-body"></div>
+            <div id="chat-input">
+                <span id="add-button">+</span>
+                <div class="input-wrapper">
+                    <textarea id="message-input" placeholder="Message" rows="1"></textarea>
+                </div>
+                <button id="send-button">
+                    <svg viewBox="0 0 24 24">
+                        <path d="M5 12h14M12 5l7 7-7 7"/>
+                    </svg>
+                </button>
+            </div>
+        </div>
+        <div id="bottom-area">
+            <div id="home-indicator"></div>
+        </div>
+    </div>
+</div>
+
+<!-- CSV Parser -->
+<script src="https://cdn.jsdelivr.net/npm/papaparse@5.3.2/papaparse.min.js"></script>
+<!-- html2canvas for Screenshot -->
+<script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+<!-- CCapture for GIF Recording -->
+<script src="https://cdn.jsdelivr.net/gh/spite/ccapture.js@latest/build/CCapture.all.min.js"></script>
+<script src="https://cdn.jsdelivr.net/gh/spite/ccapture.js@latest/build/gif.worker.js"></script>
+
+<script>
+  let conversationData = [];
+
+  // References
+  const csvInput       = document.getElementById('csvInput');
+  const parseBtn       = document.getElementById('parseBtn');
+  const replayBtn      = document.getElementById('replayBtn');
+  const screenshotBtn  = document.getElementById('screenshotBtn');
+  const chatBody       = document.getElementById('chat-body');
+  const phoneElement   = document.getElementById('chat-window');
+  const iconUpload     = document.getElementById('iconUpload');
+  const iconPreview    = document.getElementById('iconPreview');
+  const avatarImages   = document.querySelectorAll('.avatar img');
+  const resetIcon      = document.getElementById('resetIcon');
+  const defaultIconSrc = 'icon.jpg';
+
+  // 1) Parse CSV and show messages
+  parseBtn.addEventListener('click', () => {
+    const csvText = csvInput.value.trim();
+    if (!csvText) {
+      alert("Please paste a valid CSV with 'timestamp,role,message' columns!");
+      return;
+    }
+    
+    Papa.parse(csvText, {
+      header: true,
+      skipEmptyLines: true,
+      complete: function(results) {
+        conversationData = results.data;
+        
+        // Clear existing chat
+        clearChat();
+        
+        // Add all messages immediately
+        conversationData.forEach(msgData => {
+          const bubble = createMessageBubble(msgData);
+          chatBody.appendChild(bubble);
+        });
+        
+        // Scroll to bottom
+        chatBody.scrollTop = chatBody.scrollHeight;
+        
+        alert(`Parsed and displayed ${conversationData.length} messages.`);
+      },
+      error: function(err) {
+        alert("Error parsing CSV: " + err);
+      }
+    });
+  });
+
+  // Clear chat
+  function clearChat() {
+    chatBody.innerHTML = '';
+  }
+
+  // Create bubble
+  function createMessageBubble(msgObj) {
+    const { timestamp, role, message } = msgObj;
+    const bubble = document.createElement('div');
+    bubble.classList.add('message');
+
+    // Distinguish user or Luzia
+    if (role.toLowerCase().includes('user')) {
+      bubble.classList.add('user');
+    } else {
+      bubble.classList.add('luzia');
+    }
+
+    // Message text
+    const msgDiv = document.createElement('div');
+    msgDiv.classList.add('markdown-content');
+    msgDiv.textContent = message;
+    bubble.appendChild(msgDiv);
+
+    // Format timestamp (24-hour HH:MM)
+    const time = new Date(timestamp).toLocaleTimeString('en-US', {
+      hour: '2-digit',
+      minute: '2-digit',
+      hour12: false
+    });
+
+    const tsDiv = document.createElement('div');
+    tsDiv.className = 'timestamp';
+    tsDiv.textContent = time;
+    bubble.appendChild(tsDiv);
+
+    return bubble;
+  }
+
+  // Helper to wait
+  function waitMs(ms) {
+    return new Promise(resolve => setTimeout(resolve, ms));
+  }
+
+  // 2) Replay conversation
+  replayBtn.addEventListener('click', async () => {
+    // Clear existing chat
+    clearChat();
+    
+    // Auto-parse if no conversation data exists
+    if (!conversationData.length) {
+      const csvText = csvInput.value.trim();
+      if (!csvText) {
+        alert("Please paste a valid CSV with 'timestamp,role,message' columns!");
+        return;
+      }
+      
+      // Parse the CSV
+      await new Promise((resolve) => {
+        Papa.parse(csvText, {
+          header: true,
+          skipEmptyLines: true,
+          complete: function(results) {
+            conversationData = results.data;
+            resolve();
+          },
+          error: function(err) {
+            alert("Error parsing CSV: " + err);
+            resolve();
+          }
+        });
+      });
+      
+      if (!conversationData.length) {
+        alert("No valid conversation data found in CSV.");
+        return;
+      }
+    }
+    
+    // Animate the conversation
+    for (let i = 0; i < conversationData.length; i++) {
+      const bubble = createMessageBubble(conversationData[i]);
+      chatBody.appendChild(bubble);
+      chatBody.scrollTop = chatBody.scrollHeight;
+      await waitMs(600);
+    }
+  });
+
+  // 3) Export screenshot
+  screenshotBtn.addEventListener('click', async () => {
+    // Auto-parse if no conversation data exists
+    if (!conversationData.length) {
+      const csvText = csvInput.value.trim();
+      if (!csvText) {
+        alert("Please paste a valid CSV with 'timestamp,role,message' columns!");
+        return;
+      }
+      
+      // Parse the CSV
+      Papa.parse(csvText, {
+        header: true,
+        skipEmptyLines: true,
+        complete: function(results) {
+          conversationData = results.data;
+          // Display all messages immediately
+          clearChat();
+          conversationData.forEach(msgData => {
+            const bubble = createMessageBubble(msgData);
+            chatBody.appendChild(bubble);
+          });
+          chatBody.scrollTop = chatBody.scrollHeight;
+          // Continue with screenshot
+          takeScreenshot();
+        },
+        error: function(err) {
+          alert("Error parsing CSV: " + err);
+        }
+      });
+    } else {
+      takeScreenshot();
+    }
+  });
+
+  // Helper function for taking screenshot
+  async function takeScreenshot() {
+    if (!phoneElement) {
+      alert("Phone simulator not found!");
+      return;
+    }
+    try {
+      const canvas = await html2canvas(phoneElement, {
+        scale: 2,
+        backgroundColor: '#ffffff',
+        logging: false,
+        useCORS: true,
+        imageTimeout: 0,
+        onclone: function(clonedDoc) {
+          const clonedElement = clonedDoc.querySelector('#chat-window');
+          if (clonedElement) {
+            clonedElement.style.transform = 'none';
+          }
+        }
+      });
+      canvas.toBlob((blob) => {
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.download = `luzia-chat-${new Date().toISOString().slice(0,10)}.png`;
+        link.href = url;
+        link.click();
+        URL.revokeObjectURL(url);
+      }, 'image/png');
+    } catch (error) {
+      console.error('Screenshot failed:', error);
+      alert('Failed to create screenshot: ' + error.message);
+    }
+  }
+
+  // 4) Export GIF
+  function updateAvatarImages(newSrc) {
+    iconPreview.src = newSrc;
+    document.querySelectorAll('.avatar img').forEach(img => {
+        img.src = newSrc;
+        // Update the onerror handler for the new image
+        img.onerror = function() {
+            this.onerror = null;
+            this.src = 'data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 width=%2236%22 height=%2236%22><rect width=%22100%25%22 height=%22100%25%22 fill=%22%23f0f0f0%22/><text x=%2250%25%22 y=%2250%25%22 dominant-baseline=%22middle%22 text-anchor=%22middle%22 font-size=%2216%22>L</text></svg>';
+        };
+    });
+  }
+
+  // Handle file upload
+  iconUpload.addEventListener('change', function(e) {
+    const file = e.target.files[0];
+    if (file) {
+        if (file.type !== 'image/jpeg' && file.type !== 'image/png') {
+            alert('Please select a JPG or PNG image.');
+            return;
+        }
+
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            updateAvatarImages(e.target.result);
+        };
+        reader.readAsDataURL(file);
+    }
+  });
+
+  // Reset button handler
+  resetIcon.addEventListener('click', function() {
+    updateAvatarImages(defaultIconSrc);
+    // Clear the file input
+    iconUpload.value = '';
+  });
+
+  // Add error handling for the preview image
+  iconPreview.addEventListener('error', function() {
+    this.src = 'data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 width=%2248%22 height=%2248%22><rect width=%22100%25%22 height=%22100%25%22 fill=%22%23f0f0f0%22/><text x=%2250%25%22 y=%2250%25%22 dominant-baseline=%22middle%22 text-anchor=%22middle%22 font-size=%2220%22>L</text></svg>';
+  });
+</script>
+
+<!-- Debug image loading -->
+<script>
+window.addEventListener('load', function() {
+    const img = document.querySelector('.avatar img');
+    console.log('Current image path:', img.src);
+    console.log('Image complete:', img.complete);
+    console.log('Image naturalWidth:', img.naturalWidth);
+    
+    // Try to fetch the image directly
+    fetch(img.src)
+        .then(response => {
+            console.log('Image fetch status:', response.status);
+            console.log('Image fetch headers:', response.headers);
+        })
+        .catch(error => console.log('Image fetch error:', error));
+});
+</script>
+
+</body>
+</html>
