@@ -437,7 +437,7 @@
                     </button>
                 </div>
             </div>
-            <textarea id="csvInput" placeholder="timestamp,role,message&#10;2024-02-06 09:30,user,Hello Luzia!&#10;2024-02-06 09:30,luzia,Hi! How can I help you?"></textarea>
+            <textarea id="csvInput" placeholder="timestamp	role	message&#10;2024-02-06 09:30	user	Hello Luzia!&#10;2024-02-06 09:30	luzia	Hi! How can I help you?"></textarea>
             <div id="controls" style="display: flex; align-items: center; gap: 8px;">
                 <div style="display: flex; align-items: center; border: 1px solid #ddd; padding: 4px; border-radius: 6px;">
                     <button id="parseBtn">Parse CSV</button>
@@ -544,7 +544,7 @@
     Papa.parse(csvText, {
       header: true,
       skipEmptyLines: true,
-      delimiter: ",",     // Explicitly set delimiter
+      delimiter: "\t",    // Use tab as delimiter
       quoteChar: '"',     // Use double quotes for field enclosure
       escapeChar: '"',    // Use double quotes for escaping
       complete: function(results) {
@@ -680,18 +680,7 @@
       Papa.parse(csvText, {
         header: true,
         skipEmptyLines: true,
-        delimiter: ",",     // Explicitly set delimiter
-        quoteChar: '"',     // Use double quotes for field enclosure
-        escapeChar: '"',    // Use double quotes for escaping
         complete: function(results) {
-          // Validate required columns
-          if (!results.meta.fields?.includes('timestamp') || 
-              !results.meta.fields?.includes('role') || 
-              !results.meta.fields?.includes('message')) {
-            alert("CSV must contain 'timestamp', 'role', and 'message' columns!");
-            return;
-          }
-          
           conversationData = results.data;
           // Display all messages immediately
           clearChat();
