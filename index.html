@@ -541,18 +541,34 @@
       return;
     }
     
-    Papa.parse(csvText, {
+    // Pre-process CSV to TSV if needed
+    const processedText = csvText.split('\n').map(line => {
+      // Find first two commas only
+      let firstCommaIndex = line.indexOf(',');
+      if (firstCommaIndex === -1) return line; // Already TSV or invalid
+      
+      let secondCommaIndex = line.indexOf(',', firstCommaIndex + 1);
+      if (secondCommaIndex === -1) return line; // Not enough columns
+      
+      // Split the line into three parts
+      let timestamp = line.substring(0, firstCommaIndex);
+      let role = line.substring(firstCommaIndex + 1, secondCommaIndex);
+      let message = line.substring(secondCommaIndex + 1);
+      
+      // Recombine with tabs
+      return `${timestamp}\t${role}\t${message}`;
+    }).join('\n');
+
+    Papa.parse(processedText, {
       header: true,
       skipEmptyLines: true,
       delimiter: "\t",    // Use tab as delimiter
-      quoteChar: '"',     // Use double quotes for field enclosure
-      escapeChar: '"',    // Use double quotes for escaping
       complete: function(results) {
         // Validate required columns
         if (!results.meta.fields?.includes('timestamp') || 
             !results.meta.fields?.includes('role') || 
             !results.meta.fields?.includes('message')) {
-          alert("CSV must contain 'timestamp', 'role', and 'message' columns!");
+          alert("Input must contain 'timestamp', 'role', and 'message' columns!");
           return;
         }
         
