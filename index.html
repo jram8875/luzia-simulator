@@ -437,12 +437,17 @@
                     </button>
                 </div>
             </div>
-            <textarea id="csvInput" placeholder="timestamp	role	message&#10;2024-02-06 09:30	user	Hello Luzia!&#10;2024-02-06 09:30	luzia	Hi! How can I help you?"></textarea>
+            <textarea id="csvInput" placeholder="conversation_id&#9;timestamp&#9;role&#9;message&#10;1&#9;2024-02-06 09:30&#9;user&#9;Hello Luzia!&#10;1&#9;2024-02-06 09:30&#9;luzia&#9;Hi! How can I help you?"></textarea>
             <div id="controls" style="display: flex; align-items: center; gap: 8px;">
                 <div style="display: flex; align-items: center; border: 1px solid #ddd; padding: 4px; border-radius: 6px;">
                     <button id="parseBtn">Parse CSV</button>
                     <div style="width: 1px; height: 24px; background: #ddd; margin: 0 8px;"></div>
                     <button id="replayBtn">Replay</button>
+                </div>
+                <div style="display: flex; align-items: center; border: 1px solid #ddd; padding: 4px; border-radius: 6px;">
+                    <button id="prevBtn">←</button>
+                    <span id="conversationCounter" style="margin: 0 12px; min-width: 60px; text-align: center;">0/0</span>
+                    <button id="nextBtn">→</button>
                 </div>
                 <button id="screenshotBtn">Screenshot</button>
             </div>
@@ -519,6 +524,9 @@
 
 <script>
   let conversationData = [];
+  let groupedConversations = {};
+  let currentConversationIndex = 0;
+  let conversationIds = [];
 
   // References
   const csvInput       = document.getElementById('csvInput');
@@ -533,11 +541,16 @@
   const resetIcon      = document.getElementById('resetIcon');
   const defaultIconSrc = 'icon.jpg';
 
+  // Add references to new elements
+  const prevBtn = document.getElementById('prevBtn');
+  const nextBtn = document.getElementById('nextBtn');
+  const conversationCounter = document.getElementById('conversationCounter');
+
   // 1) Parse CSV and show messages
   parseBtn.addEventListener('click', () => {
     const csvText = csvInput.value.trim();
     if (!csvText) {
-      alert("Please paste a valid CSV with 'timestamp,role,message' columns!");
+      alert("Please paste a valid CSV!");
       return;
     }
     
@@ -562,31 +575,43 @@
     Papa.parse(processedText, {
       header: true,
       skipEmptyLines: true,
-      delimiter: "\t",    // Use tab as delimiter
+      delimiter: "\t",
       complete: function(results) {
         // Validate required columns
         if (!results.meta.fields?.includes('timestamp') || 
             !results.meta.fields?.includes('role') || 
-            !results.meta.fields?.includes('message')) {
-          alert("Input must contain 'timestamp', 'role', and 'message' columns!");
+            !results.meta.fields?.includes('message') ||
+            !results.meta.fields?.includes('conversation_id')) {
+          alert("Input must contain 'conversation_id', 'timestamp', 'role', and 'message' columns!");
           return;
         }
         
-        conversationData = results.data;
-        
-        // Clear existing chat
-        clearChat();
-        
-        // Add all messages immediately
-        conversationData.forEach(msgData => {
-          const bubble = createMessageBubble(msgData);
-          chatBody.appendChild(bubble);
+        // Group conversations by conversation_id
+        groupedConversations = {};
+        results.data.forEach(row => {
+          const convId = row.conversation_id;
+          if (!groupedConversations[convId]) {
+            groupedConversations[convId] = [];
+          }
+          groupedConversations[convId].push(row);
         });
         
-        // Scroll to bottom
-        chatBody.scrollTop = chatBody.scrollHeight;
+        // Sort conversations within each group by timestamp
+        Object.values(groupedConversations).forEach(conv => {
+          conv.sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
+        });
         
-        alert(`Parsed and displayed ${conversationData.length} messages.`);
+        conversationIds = Object.keys(groupedConversations);
+        currentConversationIndex = 0;
+        
+        // Display first conversation
+        if (conversationIds.length > 0) {
+          conversationData = groupedConversations[conversationIds[0]];
+          displayCurrentConversation();
+          updateNavigationControls();
+        }
+        
+        alert(`Parsed ${conversationIds.length} conversations.`);
       },
       error: function(err) {
         alert("Error parsing CSV: " + err);
@@ -594,86 +619,50 @@
     });
   });
 
-  // Clear chat
-  function clearChat() {
-    chatBody.innerHTML = '';
-  }
-
-  // Create bubble
-  function createMessageBubble(msgObj) {
-    const { timestamp, role, message } = msgObj;
-    const bubble = document.createElement('div');
-    bubble.classList.add('message');
-
-    // Distinguish user or Luzia
-    if (role.toLowerCase().includes('user')) {
-      bubble.classList.add('user');
-    } else {
-      bubble.classList.add('luzia');
-    }
-
-    // Message text
-    const msgDiv = document.createElement('div');
-    msgDiv.classList.add('markdown-content');
-    msgDiv.textContent = message;
-    bubble.appendChild(msgDiv);
-
-    // Format timestamp (24-hour HH:MM)
-    const time = new Date(timestamp).toLocaleTimeString('en-US', {
-      hour: '2-digit',
-      minute: '2-digit',
-      hour12: false
+  // Add navigation functions
+  function displayCurrentConversation() {
+    clearChat();
+    const currentId = conversationIds[currentConversationIndex];
+    conversationData = groupedConversations[currentId];
+    conversationData.forEach(msgData => {
+      const bubble = createMessageBubble(msgData);
+      chatBody.appendChild(bubble);
     });
-
-    const tsDiv = document.createElement('div');
-    tsDiv.className = 'timestamp';
-    tsDiv.textContent = time;
-    bubble.appendChild(tsDiv);
-
-    return bubble;
+    chatBody.scrollTop = chatBody.scrollHeight;
   }
 
-  // Helper to wait
-  function waitMs(ms) {
-    return new Promise(resolve => setTimeout(resolve, ms));
+  function updateNavigationControls() {
+    conversationCounter.textContent = `${currentConversationIndex + 1}/${conversationIds.length}`;
+    prevBtn.disabled = currentConversationIndex === 0;
+    nextBtn.disabled = currentConversationIndex === conversationIds.length - 1;
   }
+
+  // Add navigation event listeners
+  prevBtn.addEventListener('click', () => {
+    if (currentConversationIndex > 0) {
+      currentConversationIndex--;
+      displayCurrentConversation();
+      updateNavigationControls();
+    }
+  });
+
+  nextBtn.addEventListener('click', () => {
+    if (currentConversationIndex < conversationIds.length - 1) {
+      currentConversationIndex++;
+      displayCurrentConversation();
+      updateNavigationControls();
+    }
+  });
 
   // 2) Replay conversation
   replayBtn.addEventListener('click', async () => {
-    // Clear existing chat
     clearChat();
     
-    // Auto-parse if no conversation data exists
     if (!conversationData.length) {
-      const csvText = csvInput.value.trim();
-      if (!csvText) {
-        alert("Please paste a valid CSV with 'timestamp,role,message' columns!");
-        return;
-      }
-      
-      // Parse the CSV
-      await new Promise((resolve) => {
-        Papa.parse(csvText, {
-          header: true,
-          skipEmptyLines: true,
-          complete: function(results) {
-            conversationData = results.data;
-            resolve();
-          },
-          error: function(err) {
-            alert("Error parsing CSV: " + err);
-            resolve();
-          }
-        });
-      });
-      
-      if (!conversationData.length) {
-        alert("No valid conversation data found in CSV.");
-        return;
-      }
+      alert("Please parse a CSV file first!");
+      return;
     }
     
-    // Animate the conversation
     for (let i = 0; i < conversationData.length; i++) {
       const bubble = createMessageBubble(conversationData[i]);
       chatBody.appendChild(bubble);
@@ -792,6 +781,50 @@
   iconPreview.addEventListener('error', function() {
     this.src = 'data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 width=%2248%22 height=%2248%22><rect width=%22100%25%22 height=%22100%25%22 fill=%22%23f0f0f0%22/><text x=%2250%25%22 y=%2250%25%22 dominant-baseline=%22middle%22 text-anchor=%22middle%22 font-size=%2220%22>L</text></svg>';
   });
+
+  // Helper to wait
+  function waitMs(ms) {
+    return new Promise(resolve => setTimeout(resolve, ms));
+  }
+
+  // Clear chat
+  function clearChat() {
+    chatBody.innerHTML = '';
+  }
+
+  // Create bubble
+  function createMessageBubble(msgObj) {
+    const { timestamp, role, message } = msgObj;
+    const bubble = document.createElement('div');
+    bubble.classList.add('message');
+
+    // Distinguish user or Luzia
+    if (role.toLowerCase().includes('user')) {
+      bubble.classList.add('user');
+    } else {
+      bubble.classList.add('luzia');
+    }
+
+    // Message text
+    const msgDiv = document.createElement('div');
+    msgDiv.classList.add('markdown-content');
+    msgDiv.textContent = message;
+    bubble.appendChild(msgDiv);
+
+    // Format timestamp (24-hour HH:MM)
+    const time = new Date(timestamp).toLocaleTimeString('en-US', {
+      hour: '2-digit',
+      minute: '2-digit',
+      hour12: false
+    });
+
+    const tsDiv = document.createElement('div');
+    tsDiv.className = 'timestamp';
+    tsDiv.textContent = time;
+    bubble.appendChild(tsDiv);
+
+    return bubble;
+  }
 </script>
 
 <!-- Debug image loading -->
