@@ -437,7 +437,9 @@
                     </button>
                 </div>
             </div>
-            <textarea id="csvInput" placeholder="conversation_id&#9;timestamp&#9;role&#9;message&#10;1&#9;2024-02-06 09:30&#9;user&#9;Hello Luzia!&#10;1&#9;2024-02-06 09:30&#9;luzia&#9;Hi! How can I help you?"></textarea>
+            <textarea id="csvInput" placeholder="conversation_id,timestamp,prompt,completion
+1,"2024-02-06 09:30","Hello Luzia!","Hi! How can I help you?"
+2,"2024-02-06 10:00","How are you?","I'm doing great, thanks for asking!"></textarea>
             <div id="controls" style="display: flex; align-items: center; gap: 8px;">
                 <div style="display: flex; align-items: center; border: 1px solid #ddd; padding: 4px; border-radius: 6px;">
                     <button id="parseBtn">Parse</button>
@@ -553,40 +555,18 @@
       alert("Please paste a valid CSV!");
       return;
     }
-    
-    // Pre-process CSV to TSV if needed
-    const processedText = csvText.split('\n').map(line => {
-      // Find first three commas only
-      let firstCommaIndex = line.indexOf(',');
-      if (firstCommaIndex === -1) return line; // Already TSV or invalid
-      
-      let secondCommaIndex = line.indexOf(',', firstCommaIndex + 1);
-      if (secondCommaIndex === -1) return line; // Not enough columns
-      
-      let thirdCommaIndex = line.indexOf(',', secondCommaIndex + 1);
-      if (thirdCommaIndex === -1) return line; // Not enough columns
-      
-      // Split the line into four parts
-      let conversationId = line.substring(0, firstCommaIndex);
-      let timestamp = line.substring(firstCommaIndex + 1, secondCommaIndex);
-      let role = line.substring(secondCommaIndex + 1, thirdCommaIndex);
-      let message = line.substring(thirdCommaIndex + 1);
-      
-      // Recombine with tabs
-      return `${conversationId}\t${timestamp}\t${role}\t${message}`;
-    }).join('\n');
 
-    Papa.parse(processedText, {
+    // Parse the CSV properly handling quoted fields
+    Papa.parse(csvText, {
       header: true,
       skipEmptyLines: true,
-      delimiter: "\t",
       complete: function(results) {
         // Validate required columns
         if (!results.meta.fields?.includes('timestamp') || 
-            !results.meta.fields?.includes('role') || 
-            !results.meta.fields?.includes('message') ||
+            !results.meta.fields?.includes('prompt') || 
+            !results.meta.fields?.includes('completion') ||
             !results.meta.fields?.includes('conversation_id')) {
-          alert("Input must contain 'conversation_id', 'timestamp', 'role', and 'message' columns!");
+          alert("Input must contain 'conversation_id', 'timestamp', 'prompt', and 'completion' columns!");
           return;
         }
         
@@ -597,7 +577,23 @@
           if (!groupedConversations[convId]) {
             groupedConversations[convId] = [];
           }
-          groupedConversations[convId].push(row);
+          
+          // Create two message objects from each row
+          const userMsg = {
+            conversation_id: row.conversation_id,
+            timestamp: row.timestamp,
+            role: 'user',
+            message: row.prompt
+          };
+          
+          const botMsg = {
+            conversation_id: row.conversation_id,
+            timestamp: row.timestamp,
+            role: 'luzia',
+            message: row.completion
+          };
+          
+          groupedConversations[convId].push(userMsg, botMsg);
         });
         
         // Sort conversations within each group by timestamp
