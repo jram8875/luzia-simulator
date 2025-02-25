@@ -562,11 +562,11 @@
       skipEmptyLines: true,
       complete: function(results) {
         // Validate required columns
-        if (!results.meta.fields?.includes('timestamp') || 
+        if (!results.meta.fields?.includes('created_at') || 
             !results.meta.fields?.includes('prompt') || 
             !results.meta.fields?.includes('completion') ||
             !results.meta.fields?.includes('conversation_id')) {
-          alert("Input must contain 'conversation_id', 'timestamp', 'prompt', and 'completion' columns!");
+          alert("Input must contain 'conversation_id', 'created_at', 'prompt', and 'completion' columns!");
           return;
         }
         
@@ -581,14 +581,14 @@
           // Create two message objects from each row
           const userMsg = {
             conversation_id: row.conversation_id,
-            timestamp: row.timestamp,
+            timestamp: row.created_at,
             role: 'user',
             message: row.prompt
           };
           
           const botMsg = {
             conversation_id: row.conversation_id,
-            timestamp: row.timestamp,
+            timestamp: row.created_at,
             role: 'luzia',
             message: row.completion
           };
