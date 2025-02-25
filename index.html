@@ -437,9 +437,17 @@
                     </button>
                 </div>
             </div>
-            <textarea id="csvInput" placeholder="conversation_id,timestamp,prompt,completion
-1,"2024-02-06 09:30","Hello Luzia!","Hi! How can I help you?"
-2,"2024-02-06 10:00","How are you?","I'm doing great, thanks for asking!"></textarea>
+            <div style="margin-bottom: 16px;">
+                <label for="personalitySelect" style="display: block; margin-bottom: 8px;">Select Personality</label>
+                <select id="personalitySelect" 
+                        style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 6px; margin-bottom: 8px;">
+                    <option value="">All Personalities</option>
+                </select>
+            </div>
+            <textarea id="csvInput" placeholder="conversation_id,personality,timestamp,prompt,completion
+1,Assistant,2024-02-06 09:30,Hello!,Hi! How can I help you?
+1,Assistant,2024-02-06 09:31,What can you do?,I can help with various tasks...
+2,Therapist,2024-02-06 10:00,Hi there!,Hello! How are you feeling today?"></textarea>
             <div id="controls" style="display: flex; align-items: center; gap: 8px;">
                 <div style="display: flex; align-items: center; border: 1px solid #ddd; padding: 4px; border-radius: 6px;">
                     <button id="parseBtn">Parse</button>
@@ -529,6 +537,7 @@
   let groupedConversations = {};
   let currentConversationIndex = 0;
   let conversationIds = [];
+  let allConversations = {};  // Store all conversations before filtering
 
   // References
   const csvInput       = document.getElementById('csvInput');
@@ -548,6 +557,9 @@
   const nextBtn = document.getElementById('nextBtn');
   const conversationCounter = document.getElementById('conversationCounter');
 
+  // Add new references
+  const personalitySelect = document.getElementById('personalitySelect');
+
   // 1) Parse CSV and show messages
   parseBtn.addEventListener('click', () => {
     const csvText = csvInput.value.trim();
@@ -556,7 +568,6 @@
       return;
     }
 
-    // Parse the CSV properly handling quoted fields
     Papa.parse(csvText, {
       header: true,
       skipEmptyLines: true,
@@ -565,17 +576,22 @@
         if (!results.meta.fields?.includes('created_at') || 
             !results.meta.fields?.includes('prompt') || 
             !results.meta.fields?.includes('completion') ||
-            !results.meta.fields?.includes('conversation_id')) {
-          alert("Input must contain 'conversation_id', 'created_at', 'prompt', and 'completion' columns!");
+            !results.meta.fields?.includes('conversation_id') ||
+            !results.meta.fields?.includes('personality')) {
+          alert("Input must contain 'conversation_id', 'created_at', 'prompt', 'completion', and 'personality' columns!");
           return;
         }
         
-        // Group conversations by conversation_id
-        groupedConversations = {};
+        // Store all conversations first
+        allConversations = {};
+        
+        // Collect unique personalities
+        const personalities = new Set();
+        
         results.data.forEach(row => {
           const convId = row.conversation_id;
-          if (!groupedConversations[convId]) {
-            groupedConversations[convId] = [];
+          if (!allConversations[convId]) {
+            allConversations[convId] = [];
           }
           
           // Create two message objects from each row
@@ -583,41 +599,72 @@
             conversation_id: row.conversation_id,
             timestamp: row.created_at,
             role: 'user',
-            message: row.prompt
+            message: row.prompt,
+            personality: row.personality
           };
           
           const botMsg = {
             conversation_id: row.conversation_id,
             timestamp: row.created_at,
             role: 'luzia',
-            message: row.completion
+            message: row.completion,
+            personality: row.personality
           };
           
-          groupedConversations[convId].push(userMsg, botMsg);
+          allConversations[convId].push(userMsg, botMsg);
+          personalities.add(row.personality);
         });
         
-        // Sort conversations within each group by timestamp
-        Object.values(groupedConversations).forEach(conv => {
-          conv.sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
+        // Update personality dropdown
+        personalitySelect.innerHTML = '<option value="">All Personalities</option>';
+        Array.from(personalities).sort().forEach(personality => {
+          const option = document.createElement('option');
+          option.value = personality;
+          option.textContent = personality;
+          personalitySelect.appendChild(option);
         });
         
-        conversationIds = Object.keys(groupedConversations);
-        currentConversationIndex = 0;
+        // Initial filter
+        filterConversationsByPersonality();
         
-        // Display first conversation
-        if (conversationIds.length > 0) {
-          conversationData = groupedConversations[conversationIds[0]];
-          displayCurrentConversation();
-          updateNavigationControls();
-        }
-        
-        alert(`Parsed ${conversationIds.length} conversations.`);
+        alert(`Parsed ${Object.keys(allConversations).length} conversations across ${personalities.size} personalities.`);
       },
       error: function(err) {
         alert("Error parsing CSV: " + err);
       }
     });
   });
+
+  // Add personality filter function
+  function filterConversationsByPersonality() {
+    const selectedPersonality = personalitySelect.value;
+    
+    // Filter conversations based on personality
+    groupedConversations = {};
+    Object.entries(allConversations).forEach(([convId, messages]) => {
+      // If no personality selected or matches selected personality
+      if (!selectedPersonality || messages[0].personality === selectedPersonality) {
+        groupedConversations[convId] = messages;
+      }
+    });
+    
+    // Reset conversation index
+    conversationIds = Object.keys(groupedConversations);
+    currentConversationIndex = 0;
+    
+    // Display first conversation if available
+    if (conversationIds.length > 0) {
+      conversationData = groupedConversations[conversationIds[0]];
+      displayCurrentConversation();
+      updateNavigationControls();
+    } else {
+      clearChat();
+      updateNavigationControls();
+    }
+  }
+
+  // Add personality change listener
+  personalitySelect.addEventListener('change', filterConversationsByPersonality);
 
   // Add navigation functions
   function displayCurrentConversation() {
@@ -632,9 +679,11 @@
   }
 
   function updateNavigationControls() {
-    conversationCounter.textContent = `${currentConversationIndex + 1}/${conversationIds.length}`;
-    prevBtn.disabled = currentConversationIndex === 0;
-    nextBtn.disabled = currentConversationIndex === conversationIds.length - 1;
+    const total = conversationIds.length;
+    const current = total > 0 ? currentConversationIndex + 1 : 0;
+    conversationCounter.textContent = `${current}/${total}`;
+    prevBtn.disabled = currentConversationIndex === 0 || total === 0;
+    nextBtn.disabled = currentConversationIndex === total - 1 || total === 0;
   }
 
   // Add navigation event listeners
