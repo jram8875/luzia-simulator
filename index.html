@@ -408,6 +408,70 @@
       justify-content: center;
       background: white;
     }
+
+    /* Markdown Styling */
+    .markdown-content {
+        line-height: 1.4;
+    }
+
+    .markdown-content p {
+        margin: 0 0 8px 0;
+    }
+
+    .markdown-content p:last-child {
+        margin-bottom: 0;
+    }
+
+    .markdown-content code {
+        background: rgba(0, 0, 0, 0.05);
+        padding: 2px 4px;
+        border-radius: 3px;
+        font-family: monospace;
+        font-size: 0.9em;
+    }
+
+    .markdown-content pre {
+        background: rgba(0, 0, 0, 0.05);
+        padding: 8px;
+        border-radius: 4px;
+        overflow-x: auto;
+        margin: 8px 0;
+    }
+
+    .markdown-content pre code {
+        background: none;
+        padding: 0;
+    }
+
+    .markdown-content ul, 
+    .markdown-content ol {
+        margin: 4px 0;
+        padding-left: 20px;
+    }
+
+    .markdown-content blockquote {
+        margin: 8px 0;
+        padding-left: 12px;
+        border-left: 3px solid rgba(0, 0, 0, 0.2);
+        color: rgba(0, 0, 0, 0.7);
+    }
+
+    /* Adjust message bubbles to handle markdown content */
+    .message.user .markdown-content a {
+        color: #1a5653;
+    }
+
+    .message.luzia .markdown-content a {
+        color: #2b5876;
+    }
+
+    .message.user .markdown-content code {
+        background: rgba(0, 0, 0, 0.1);
+    }
+
+    .message.luzia .markdown-content code {
+        background: rgba(0, 0, 0, 0.05);
+    }
   </style>
 
 </head>
@@ -531,6 +595,8 @@
 <!-- CCapture for GIF Recording -->
 <script src="https://cdn.jsdelivr.net/gh/spite/ccapture.js@latest/build/CCapture.all.min.js"></script>
 <script src="https://cdn.jsdelivr.net/gh/spite/ccapture.js@latest/build/gif.worker.js"></script>
+<!-- Add marked.js in the head section after other script tags -->
+<script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
 
 <script>
   let conversationData = [];
@@ -559,6 +625,13 @@
 
   // Add new references
   const personalitySelect = document.getElementById('personalitySelect');
+
+  // Configure marked options
+  marked.setOptions({
+    breaks: true,  // Convert \n to <br>
+    gfm: true,     // Enable GitHub Flavored Markdown
+    sanitize: false // Allow HTML in the input
+  });
 
   // 1) Parse CSV and show messages
   parseBtn.addEventListener('click', () => {
@@ -841,7 +914,7 @@
     chatBody.innerHTML = '';
   }
 
-  // Create bubble
+  // Update the createMessageBubble function
   function createMessageBubble(msgObj) {
     const { timestamp, role, message } = msgObj;
     const bubble = document.createElement('div');
@@ -849,22 +922,29 @@
 
     // Distinguish user or Luzia
     if (role.toLowerCase().includes('user')) {
-      bubble.classList.add('user');
+        bubble.classList.add('user');
     } else {
-      bubble.classList.add('luzia');
+        bubble.classList.add('luzia');
     }
 
-    // Message text
+    // Message text with Markdown support
     const msgDiv = document.createElement('div');
     msgDiv.classList.add('markdown-content');
-    msgDiv.textContent = message;
+    msgDiv.innerHTML = marked.parse(message);
+
+    // Make links open in new tab
+    msgDiv.querySelectorAll('a').forEach(link => {
+        link.setAttribute('target', '_blank');
+        link.setAttribute('rel', 'noopener noreferrer');
+    });
+
     bubble.appendChild(msgDiv);
 
     // Format timestamp (24-hour HH:MM)
     const time = new Date(timestamp).toLocaleTimeString('en-US', {
-      hour: '2-digit',
-      minute: '2-digit',
-      hour12: false
+        hour: '2-digit',
+        minute: '2-digit',
+        hour12: false
     });
 
     const tsDiv = document.createElement('div');
