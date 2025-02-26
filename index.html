@@ -496,6 +496,22 @@
         overflow-x: auto;
         overflow-y: hidden;
     }
+
+    /* Conversation Header Styling */
+    .conversation-header {
+        text-align: center;
+        padding: 8px 0;
+        margin: 8px 0;
+        color: #667781;
+        font-size: 12.5px;
+    }
+
+    .conversation-header span {
+        background-color: rgba(225, 245, 254, 0.92);
+        padding: 4px 12px;
+        border-radius: 8px;
+        box-shadow: 0 1px 0.5px rgba(0, 0, 0, 0.13);
+    }
   </style>
 
   <!-- Add KaTeX CSS and JS in the head section after other tags -->
@@ -655,6 +671,9 @@
   // Add new references
   const personalitySelect = document.getElementById('personalitySelect');
 
+  // Add reference to the bot name element
+  const botNameElement = document.querySelector('.header-text h2');
+
   // Configure marked options with LaTeX support
   marked.setOptions({
     breaks: true,
@@ -749,13 +768,16 @@
   function filterConversationsByPersonality() {
     const selectedPersonality = personalitySelect.value;
     
+    // Update bot name in header
+    botNameElement.textContent = selectedPersonality || 'Luzia';
+    
     // Filter conversations based on personality
     groupedConversations = {};
     Object.entries(allConversations).forEach(([convId, messages]) => {
-      // If no personality selected or matches selected personality
-      if (!selectedPersonality || messages[0].personality === selectedPersonality) {
-        groupedConversations[convId] = messages;
-      }
+        // If no personality selected or matches selected personality
+        if (!selectedPersonality || messages[0].personality === selectedPersonality) {
+            groupedConversations[convId] = messages;
+        }
     });
     
     // Reset conversation index
@@ -764,12 +786,12 @@
     
     // Display first conversation if available
     if (conversationIds.length > 0) {
-      conversationData = groupedConversations[conversationIds[0]];
-      displayCurrentConversation();
-      updateNavigationControls();
+        conversationData = groupedConversations[conversationIds[0]];
+        displayCurrentConversation();
+        updateNavigationControls();
     } else {
-      clearChat();
-      updateNavigationControls();
+        clearChat();
+        updateNavigationControls();
     }
   }
 
@@ -781,10 +803,22 @@
     clearChat();
     const currentId = conversationIds[currentConversationIndex];
     conversationData = groupedConversations[currentId];
+
+    // Add conversation header
+    const headerDiv = document.createElement('div');
+    headerDiv.className = 'conversation-header';
+    const headerSpan = document.createElement('span');
+    headerSpan.textContent = `Conversation #${currentId}`;
+    headerDiv.appendChild(headerSpan);
+    chatBody.appendChild(headerDiv);
+
+    // Add messages
     conversationData.forEach(msgData => {
-      const bubble = createMessageBubble(msgData);
-      chatBody.appendChild(bubble);
+        const bubble = createMessageBubble(msgData);
+        chatBody.appendChild(bubble);
     });
+    
+    // Scroll to top
     chatBody.scrollTop = 0;
   }
 
@@ -822,11 +856,21 @@
       return;
     }
     
+    // Add conversation header first
+    const currentId = conversationIds[currentConversationIndex];
+    const headerDiv = document.createElement('div');
+    headerDiv.className = 'conversation-header';
+    const headerSpan = document.createElement('span');
+    headerSpan.textContent = `Conversation #${currentId}`;
+    headerDiv.appendChild(headerSpan);
+    chatBody.appendChild(headerDiv);
+    
+    // Then add messages with animation
     for (let i = 0; i < conversationData.length; i++) {
-      const bubble = createMessageBubble(conversationData[i]);
-      chatBody.appendChild(bubble);
-      chatBody.scrollTop = chatBody.scrollHeight;
-      await waitMs(600);
+        const bubble = createMessageBubble(conversationData[i]);
+        chatBody.appendChild(bubble);
+        chatBody.scrollTop = chatBody.scrollHeight;
+        await waitMs(600);
     }
   });
 
