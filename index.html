@@ -698,7 +698,7 @@
             allConversations[convId] = [];
           }
           
-          // Create two message objects from each row
+          // Create user message
           const userMsg = {
             conversation_id: row.conversation_id,
             timestamp: row.created_at,
@@ -707,9 +707,10 @@
             personality: row.personality
           };
           
+          // Create bot message with 1-second delay
           const botMsg = {
             conversation_id: row.conversation_id,
-            timestamp: row.created_at,
+            timestamp: new Date(new Date(row.created_at).getTime() + 1000).toISOString(),
             role: 'luzia',
             message: row.completion,
             personality: row.personality
@@ -717,6 +718,11 @@
           
           allConversations[convId].push(userMsg, botMsg);
           personalities.add(row.personality);
+        });
+        
+        // Sort messages within each conversation by timestamp
+        Object.values(allConversations).forEach(conversation => {
+          conversation.sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
         });
         
         // Update personality dropdown
